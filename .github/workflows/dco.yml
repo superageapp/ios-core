@@ -1,0 +1,35 @@
+name: DCO
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  dco:
+    name: Commit signoff
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Check DCO signoff
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          missing=0
+          range="${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
+
+          while IFS= read -r commit; do
+            if ! git log -1 --format=%B "$commit" | grep -Eiq '^Signed-off-by: .+ <[^>]+>$'; then
+              echo "::error title=Missing DCO signoff::Commit $commit is missing a Signed-off-by trailer."
+              missing=1
+            fi
+          done < <(git rev-list "$range")
+
+          if [[ "$missing" -ne 0 ]]; then
+            echo "Every commit must include a Signed-off-by: Name <email> trailer."
+            exit 1
+          fi

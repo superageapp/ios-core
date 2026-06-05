@@ -1,0 +1,147 @@
+{
+  "cases" : [
+    {
+      "expected" : {
+        "confidence" : 1,
+        "domainScores" : {
+          "activity" : 100,
+          "bodyComposition" : 97.5,
+          "cardiovascular" : 95.75961538461539,
+          "lifestyle" : 97.27272727272728,
+          "recovery" : 98.75
+        },
+        "fitnessAge" : 32.331914438462945,
+        "overallScore" : 97.76610139860139
+      },
+      "id" : "balanced_male_full_data",
+      "input" : {
+        "configuration" : {
+          "domainWeights" : {
+            "activity" : 0.24,
+            "bodyComposition" : 0.18,
+            "cardiovascular" : 0.28,
+            "lifestyle" : 0.15,
+            "recovery" : 0.15
+          }
+        },
+        "metrics" : {
+          "activeEnergy" : 600,
+          "bodyMassIndex" : 23.5,
+          "exerciseTime" : 45,
+          "heartRateVariability" : 50,
+          "respiratoryRate" : 15,
+          "restingHeartRate" : 58,
+          "sleepHours" : 7.5,
+          "stepCount" : 10000,
+          "vo2Max" : 45
+        },
+        "profile" : {
+          "biologicalSex" : "male",
+          "chronologicalAge" : 42,
+          "disabledMetricIds" : [
+
+          ],
+          "excludedDomains" : [
+
+          ],
+          "focusDomains" : [
+
+          ]
+        }
+      }
+    },
+    {
+      "expected" : {
+        "confidence" : 0.78,
+        "domainScores" : {
+          "activity" : 100,
+          "bodyComposition" : 100,
+          "cardiovascular" : 100,
+          "lifestyle" : 100,
+          "recovery" : 80.76923076923076
+        },
+        "fitnessAge" : 35.37150987687926,
+        "overallScore" : 97.11538461538461
+      },
+      "id" : "opportunistic_metrics",
+      "input" : {
+        "configuration" : {
+          "domainWeights" : {
+            "activity" : 0.24,
+            "bodyComposition" : 0.18,
+            "cardiovascular" : 0.28,
+            "lifestyle" : 0.15,
+            "recovery" : 0.15
+          }
+        },
+        "metrics" : {
+          "bloodGlucose" : 96,
+          "sixMinuteWalkTestDistance" : 520,
+          "sleepingWristTemperatureDeviation" : 0,
+          "standHours" : 10,
+          "timeInDaylight" : 45,
+          "walkingHeartRateAverage" : 92
+        },
+        "profile" : {
+          "biologicalSex" : "male",
+          "chronologicalAge" : 45,
+          "disabledMetricIds" : [
+
+          ],
+          "excludedDomains" : [
+
+          ],
+          "focusDomains" : [
+
+          ]
+        }
+      }
+    },
+    {
+      "expected" : {
+        "confidence" : 0.8,
+        "domainScores" : {
+          "activity" : 100,
+          "cardiovascular" : 100,
+          "recovery" : 84.50315789473684
+        },
+        "fitnessAge" : 30.627462159020915,
+        "overallScore" : 96.53055773762765
+      },
+      "id" : "zero_values_excluded",
+      "input" : {
+        "configuration" : {
+          "domainWeights" : {
+            "activity" : 0.24,
+            "bodyComposition" : 0.18,
+            "cardiovascular" : 0.28,
+            "lifestyle" : 0.15,
+            "recovery" : 0.15
+          }
+        },
+        "metrics" : {
+          "activeEnergy" : 500,
+          "heartRateVariability" : 45,
+          "maxHeartRate" : 180,
+          "restingHeartRate" : 58,
+          "sleepScore" : 0,
+          "stepCount" : 0,
+          "vo2Max" : 0
+        },
+        "profile" : {
+          "biologicalSex" : "male",
+          "chronologicalAge" : 40,
+          "disabledMetricIds" : [
+
+          ],
+          "excludedDomains" : [
+
+          ],
+          "focusDomains" : [
+
+          ]
+        }
+      }
+    }
+  ]
+}
