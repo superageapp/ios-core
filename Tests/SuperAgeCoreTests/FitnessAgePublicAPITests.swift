@@ -27,6 +27,8 @@ struct FitnessAgePublicAPITests {
         let first = FitnessAgeCalculator().calculate(input)
         let second = FitnessAgeCalculator().calculate(input)
 
+        #expect(input.configuration.algorithmMode == .evidenceFirst)
+        #expect(abs(first.fitnessAge - 32.44677972027972) < 0.0001)
         #expect(first.fitnessAge > 0)
         #expect(first.confidence > 0)
         #expect(first.domainScores[.cardiovascular] != nil)
@@ -43,11 +45,23 @@ struct FitnessAgePublicAPITests {
 
         let configuration = try JSONDecoder().decode(FitnessAgeConfiguration.self, from: json)
 
+        #expect(configuration.algorithmMode == .evidenceFirst)
+        #expect(configuration.mapping == .evidenceFirst)
         #expect(configuration.domainWeights[.activity] == 0.42)
         #expect(configuration.domainWeights[.cardiovascular] == FitnessAgeDomain.cardiovascular.defaultWeight)
         #expect(configuration.domainWeights[.recovery] == FitnessAgeDomain.recovery.defaultWeight)
         #expect(configuration.domainWeights[.bodyComposition] == FitnessAgeDomain.bodyComposition.defaultWeight)
         #expect(configuration.domainWeights[.lifestyle] == FitnessAgeDomain.lifestyle.defaultWeight)
+    }
+
+    @Test("configuration exposes evidence-first default and compatibility mode")
+    func configurationExposesAlgorithmModes() {
+        #expect(FitnessAgeConfiguration.default.algorithmMode == .evidenceFirst)
+        #expect(FitnessAgeConfiguration.default.mapping == .evidenceFirst)
+        #expect(FitnessAgeConfiguration.default.mapping.maximumAgeDelta == 10)
+        #expect(FitnessAgeConfiguration.default.mapping.minimumDisplayAge == 18)
+        #expect(FitnessAgeConfiguration.compatibilityV1.algorithmMode == .compatibilityV1)
+        #expect(FitnessAgeConfiguration.compatibilityV1.mapping == .compatibilityV1)
     }
 
     @Test("result codable uses raw string domain keys")

@@ -10,17 +10,20 @@ struct FitnessAgeScoreToAgeMappingTests {
         let scoreJustBelowNeutral = FitnessAgeScoreAggregator.fitnessAge(
             score: 49.999,
             chronologicalAge: chronologicalAge,
-            confidence: 1.0
+            confidence: 1.0,
+            configuration: .default
         )
         let neutralScore = FitnessAgeScoreAggregator.fitnessAge(
             score: 50.0,
             chronologicalAge: chronologicalAge,
-            confidence: 1.0
+            confidence: 1.0,
+            configuration: .default
         )
         let scoreJustAboveNeutral = FitnessAgeScoreAggregator.fitnessAge(
             score: 50.001,
             chronologicalAge: chronologicalAge,
-            confidence: 1.0
+            confidence: 1.0,
+            configuration: .default
         )
 
         #expect(abs(scoreJustBelowNeutral - neutralScore) < 0.01)
@@ -33,11 +36,52 @@ struct FitnessAgeScoreToAgeMappingTests {
             let fitnessAge = FitnessAgeScoreAggregator.fitnessAge(
                 score: 50,
                 chronologicalAge: chronologicalAge,
-                confidence: 1.0
+                confidence: 1.0,
+                configuration: .default
             )
 
             #expect(abs(fitnessAge - Double(chronologicalAge)) < 0.0001)
         }
+    }
+
+    @Test("evidence-first mapping is symmetric around chronological age")
+    func evidenceFirstMappingIsSymmetricAroundChronologicalAge() {
+        let chronologicalAge = 42
+
+        let neutral = FitnessAgeScoreAggregator.fitnessAge(
+            score: 50,
+            chronologicalAge: chronologicalAge,
+            confidence: 1,
+            configuration: .default
+        )
+        let excellent = FitnessAgeScoreAggregator.fitnessAge(
+            score: 100,
+            chronologicalAge: chronologicalAge,
+            confidence: 1,
+            configuration: .default
+        )
+        let poor = FitnessAgeScoreAggregator.fitnessAge(
+            score: 0,
+            chronologicalAge: chronologicalAge,
+            confidence: 1,
+            configuration: .default
+        )
+
+        #expect(neutral == 42)
+        #expect(excellent == 32)
+        #expect(poor == 52)
+    }
+
+    @Test("compatibility mapping preserves current AgePulse output")
+    func compatibilityMappingPreservesCurrentAgePulseOutput() {
+        let fitnessAge = FitnessAgeScoreAggregator.fitnessAge(
+            score: 97.76610139860139,
+            chronologicalAge: 42,
+            confidence: 1,
+            configuration: .compatibilityV1
+        )
+
+        #expect(abs(fitnessAge - 32.331914438462945) < 0.0001)
     }
 
     @Test(
@@ -48,7 +92,8 @@ struct FitnessAgeScoreToAgeMappingTests {
         let fitnessAge = FitnessAgeScoreAggregator.fitnessAge(
             score: testCase.score,
             chronologicalAge: testCase.chronologicalAge,
-            confidence: 1.0
+            confidence: 1.0,
+            configuration: .compatibilityV1
         )
 
         #expect(fitnessAge >= testCase.minimumAge)

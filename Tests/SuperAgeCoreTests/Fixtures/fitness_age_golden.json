@@ -16,12 +16,17 @@
       "id" : "balanced_male_full_data",
       "input" : {
         "configuration" : {
+          "algorithmMode" : "compatibilityV1",
           "domainWeights" : {
             "activity" : 0.24,
             "bodyComposition" : 0.18,
             "cardiovascular" : 0.28,
             "lifestyle" : 0.15,
             "recovery" : 0.15
+          },
+          "mapping" : {
+            "maximumAgeDelta" : 10,
+            "minimumDisplayAge" : 18
           }
         },
         "metrics" : {
@@ -66,12 +71,17 @@
       "id" : "opportunistic_metrics",
       "input" : {
         "configuration" : {
+          "algorithmMode" : "compatibilityV1",
           "domainWeights" : {
             "activity" : 0.24,
             "bodyComposition" : 0.18,
             "cardiovascular" : 0.28,
             "lifestyle" : 0.15,
             "recovery" : 0.15
+          },
+          "mapping" : {
+            "maximumAgeDelta" : 10,
+            "minimumDisplayAge" : 18
           }
         },
         "metrics" : {
@@ -111,12 +121,17 @@
       "id" : "zero_values_excluded",
       "input" : {
         "configuration" : {
+          "algorithmMode" : "compatibilityV1",
           "domainWeights" : {
             "activity" : 0.24,
             "bodyComposition" : 0.18,
             "cardiovascular" : 0.28,
             "lifestyle" : 0.15,
             "recovery" : 0.15
+          },
+          "mapping" : {
+            "maximumAgeDelta" : 10,
+            "minimumDisplayAge" : 18
           }
         },
         "metrics" : {
