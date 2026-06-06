@@ -15,7 +15,7 @@ Algorithm changes must note affected metrics, formulas, weights, confidence logi
 - Added golden parity tests and fixtures for Fitness Age, confidence, overall score, present domains, and domain scores.
 - Documented Fitness Age domains, missing-data behavior, opportunistic Apple Health-derived metrics, and contributor rules for algorithm changes.
 - Added Apache-2.0 license, DCO signoff policy, CI workflows, and contributor documentation.
-- Added a manual GitHub Actions release workflow that validates SemVer input, requires a dated changelog section, runs Swift build/test, creates an annotated tag, and publishes a GitHub Release.
+- Added a GitHub Actions release workflow that validates SemVer input, requires a dated changelog section, runs Swift build/test, creates an annotated tag, and publishes a GitHub Release automatically after merges to `main`.
 - Documented release and package pinning policy in the README.
 
 ### Changed

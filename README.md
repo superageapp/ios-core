@@ -112,6 +112,10 @@ SuperAgeCore follows semantic versioning.
 
 Releases are created from GitHub Actions after CI passes and the changelog section for that version is ready.
 
+When a pull request is merged to `main`, the release workflow reads the latest dated SemVer section in `CHANGELOG.md`. If the matching tag does not exist, it runs the Swift checks, creates an annotated tag, and publishes a GitHub Release. This means every merge to `main` is expected to be release-ready.
+
+The release workflow can also be run manually from GitHub Actions for a specific version.
+
 ## Scope
 
 SuperAgeCore focuses on deterministic Fitness Age scoring from normalized fitness and wellness signals supplied by a host app.

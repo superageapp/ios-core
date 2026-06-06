@@ -1,42 +1,68 @@
 name: Release
 
 on:
+  pull_request:
+  push:
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       version:
-        description: SemVer version without a leading v, for example 0.1.0
-        required: true
+        description: Optional SemVer version without a leading v, for example 0.1.0. Leave empty to use the latest dated changelog section.
+        required: false
         type: string
       prerelease:
         description: Mark the GitHub release as a prerelease
         required: true
-        default: true
+        default: false
         type: boolean
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  release:
-    name: Create release
+  validate:
+    name: Validate release readiness
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.release.outputs.version }}
+      tag: ${{ steps.release.outputs.tag }}
+      prerelease: ${{ steps.release.outputs.prerelease }}
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
-      - name: Validate release input
+      - name: Resolve release version
         id: release
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_VERSION: ${{ inputs.version }}
+          INPUT_PRERELEASE: ${{ inputs.prerelease }}
         shell: bash
         run: |
           set -euo pipefail
 
-          version="${{ inputs.version }}"
-          tag="v${version}"
-          escaped_version="$(printf '%s' "$version" | sed 's/[][\\.^$*+?{}()|]/\\&/g')"
-
-          if [[ "${GITHUB_REF_NAME}" != "main" ]]; then
+          if [[ "$EVENT_NAME" == "workflow_dispatch" && "${GITHUB_REF_NAME}" != "main" ]]; then
             echo "::error title=Wrong branch::Run releases from the main branch."
+            exit 1
+          fi
+
+          version="$INPUT_VERSION"
+          if [[ -z "$version" ]]; then
+            version="$(
+              awk '
+                /^## [0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)? - [0-9]{4}-[0-9]{2}-[0-9]{2}$/ {
+                  value = $2
+                  print value
+                  exit
+                }
+              ' CHANGELOG.md
+            )"
+          fi
+
+          if [[ -z "$version" ]]; then
+            echo "::error title=Missing release version::CHANGELOG.md must contain a dated SemVer section like '## 0.1.0 - 2026-06-06'."
             exit 1
           fi
 
@@ -45,27 +71,30 @@ jobs:
             exit 1
           fi
 
-          if git ls-remote --exit-code --tags origin "refs/tags/${tag}" >/dev/null 2>&1; then
-            echo "::error title=Tag already exists::${tag} already exists on origin."
-            exit 1
-          fi
+          tag="v${version}"
+          escaped_version="$(printf '%s' "$version" | sed 's/[][\\.^$*+?{}()|]/\\&/g')"
 
           if ! grep -Eq "^## ${escaped_version} - [0-9]{4}-[0-9]{2}-[0-9]{2}$" CHANGELOG.md; then
             echo "::error title=Missing changelog section::CHANGELOG.md must contain '## ${version} - YYYY-MM-DD'."
             exit 1
           fi
 
+          if git ls-remote --exit-code --tags origin "refs/tags/${tag}" >/dev/null 2>&1; then
+            echo "::error title=Tag already exists::${tag} already exists on origin. Add a new changelog version before merging to main."
+            exit 1
+          fi
+
+          prerelease="false"
+          if [[ "$version" == *-* ]]; then
+            prerelease="true"
+          fi
+          if [[ "$EVENT_NAME" == "workflow_dispatch" && -n "$INPUT_PRERELEASE" ]]; then
+            prerelease="$INPUT_PRERELEASE"
+          fi
+
           echo "version=${version}" >> "$GITHUB_OUTPUT"
           echo "tag=${tag}" >> "$GITHUB_OUTPUT"
-
-      - name: Show Swift version
-        run: swift --version
-
-      - name: Build
-        run: swift build
-
-      - name: Test
-        run: swift test
+          echo "prerelease=${prerelease}" >> "$GITHUB_OUTPUT"
 
       - name: Extract release notes
         shell: bash
@@ -85,13 +114,52 @@ jobs:
             exit 1
           fi
 
+      - name: Show Swift version
+        run: swift --version
+
+      - name: Build
+        run: swift build
+
+      - name: Test
+        run: swift test
+
+  publish:
+    name: Publish release
+    runs-on: ubuntu-latest
+    needs: validate
+    if: github.event_name != 'pull_request'
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Extract release notes
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          version="${{ needs.validate.outputs.version }}"
+
+          awk -v version="$version" '
+            index($0, "## " version " - ") == 1 { capture = 1; next }
+            capture && /^## / { exit }
+            capture { print }
+          ' CHANGELOG.md > release-notes.md
+
+          if ! grep -Eq '[^[:space:]]' release-notes.md; then
+            echo "::error title=Empty release notes::No release notes found for ${version}."
+            exit 1
+          fi
+
       - name: Create annotated tag
         shell: bash
         run: |
           set -euo pipefail
 
-          tag="${{ steps.release.outputs.tag }}"
-          version="${{ steps.release.outputs.version }}"
+          tag="${{ needs.validate.outputs.tag }}"
+          version="${{ needs.validate.outputs.version }}"
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -106,12 +174,12 @@ jobs:
           set -euo pipefail
 
           args=(
-            release create "${{ steps.release.outputs.tag }}"
-            --title "SuperAgeCore ${{ steps.release.outputs.version }}"
+            release create "${{ needs.validate.outputs.tag }}"
+            --title "SuperAgeCore ${{ needs.validate.outputs.version }}"
             --notes-file release-notes.md
           )
 
-          if [[ "${{ inputs.prerelease }}" == "true" ]]; then
+          if [[ "${{ needs.validate.outputs.prerelease }}" == "true" ]]; then
             args+=(--prerelease)
           fi
 
