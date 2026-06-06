@@ -1,0 +1,118 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: SemVer version without a leading v, for example 0.1.0
+        required: true
+        type: string
+      prerelease:
+        description: Mark the GitHub release as a prerelease
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Create release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Validate release input
+        id: release
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          version="${{ inputs.version }}"
+          tag="v${version}"
+          escaped_version="$(printf '%s' "$version" | sed 's/[][\\.^$*+?{}()|]/\\&/g')"
+
+          if [[ "${GITHUB_REF_NAME}" != "main" ]]; then
+            echo "::error title=Wrong branch::Run releases from the main branch."
+            exit 1
+          fi
+
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error title=Invalid version::Use SemVer without a leading v, for example 0.1.0."
+            exit 1
+          fi
+
+          if git ls-remote --exit-code --tags origin "refs/tags/${tag}" >/dev/null 2>&1; then
+            echo "::error title=Tag already exists::${tag} already exists on origin."
+            exit 1
+          fi
+
+          if ! grep -Eq "^## ${escaped_version} - [0-9]{4}-[0-9]{2}-[0-9]{2}$" CHANGELOG.md; then
+            echo "::error title=Missing changelog section::CHANGELOG.md must contain '## ${version} - YYYY-MM-DD'."
+            exit 1
+          fi
+
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+
+      - name: Show Swift version
+        run: swift --version
+
+      - name: Build
+        run: swift build
+
+      - name: Test
+        run: swift test
+
+      - name: Extract release notes
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          version="${{ steps.release.outputs.version }}"
+
+          awk -v version="$version" '
+            index($0, "## " version " - ") == 1 { capture = 1; next }
+            capture && /^## / { exit }
+            capture { print }
+          ' CHANGELOG.md > release-notes.md
+
+          if ! grep -Eq '[^[:space:]]' release-notes.md; then
+            echo "::error title=Empty release notes::No release notes found for ${version}."
+            exit 1
+          fi
+
+      - name: Create annotated tag
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          tag="${{ steps.release.outputs.tag }}"
+          version="${{ steps.release.outputs.version }}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$tag" -m "SuperAgeCore ${version}"
+          git push origin "$tag"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          args=(
+            release create "${{ steps.release.outputs.tag }}"
+            --title "SuperAgeCore ${{ steps.release.outputs.version }}"
+            --notes-file release-notes.md
+          )
+
+          if [[ "${{ inputs.prerelease }}" == "true" ]]; then
+            args+=(--prerelease)
+          fi
+
+          gh "${args[@]}"
