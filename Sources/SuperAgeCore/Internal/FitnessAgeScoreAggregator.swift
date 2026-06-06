@@ -23,9 +23,13 @@ enum FitnessAgeScoreAggregator {
     static func confidence(
         metrics: FitnessAgeMetrics,
         domainScores: [FitnessAgeDomain: FitnessAgeDomainScore],
-        profile: FitnessAgeProfile
+        profile: FitnessAgeProfile,
+        configuration: FitnessAgeConfiguration
     ) -> Double {
-        let confidenceNormalizationDomainCount = 6.0
+        let confidenceNormalizationDomainCount = normalizationDomainCount(
+            profile: profile,
+            configuration: configuration
+        )
         let domainCompleteness = Double(domainScores.count) / confidenceNormalizationDomainCount
         let weightedDataQuality = dataQuality(for: metrics)
 
@@ -63,16 +67,67 @@ enum FitnessAgeScoreAggregator {
     static func fitnessAge(
         score: Double,
         chronologicalAge: Int,
+        confidence: Double,
+        configuration: FitnessAgeConfiguration
+    ) -> Double {
+        switch configuration.algorithmMode {
+        case .evidenceFirst, .custom:
+            return evidenceFirstFitnessAge(
+                score: score,
+                chronologicalAge: chronologicalAge,
+                mapping: configuration.mapping
+            )
+        case .compatibilityV1:
+            return compatibilityFitnessAge(
+                score: score,
+                chronologicalAge: chronologicalAge,
+                confidence: confidence
+            )
+        }
+    }
+
+    private static func normalizationDomainCount(
+        profile: FitnessAgeProfile,
+        configuration: FitnessAgeConfiguration
+    ) -> Double {
+        guard configuration.algorithmMode != .compatibilityV1 else {
+            return 6.0
+        }
+
+        let enabledDomainCount = FitnessAgeDomain.allCases.filter { domain in
+            !profile.excludedDomains.contains(domain)
+        }.count
+
+        return Double(max(1, enabledDomainCount))
+    }
+
+    private static func evidenceFirstFitnessAge(
+        score: Double,
+        chronologicalAge: Int,
+        mapping: FitnessAgeMappingConfiguration
+    ) -> Double {
+        let normalizedScore = (score.clamped(to: 0...100) - 50.0) / 50.0
+        let maximumAgeDelta = max(0, mapping.maximumAgeDelta)
+        let proposedAge = Double(chronologicalAge) - (normalizedScore * maximumAgeDelta)
+        let lowerBound = max(0, mapping.minimumDisplayAge)
+        let upperBound = max(lowerBound, Double(chronologicalAge) + maximumAgeDelta)
+
+        return proposedAge.clamped(to: lowerBound...upperBound)
+    }
+
+    private static func compatibilityFitnessAge(
+        score: Double,
+        chronologicalAge: Int,
         confidence: Double
     ) -> Double {
-        let baseAge = calibratedFitnessAge(score: score, chronologicalAge: chronologicalAge)
-        let smoothFactor = smoothFavorableFactor(confidence: confidence)
+        let baseAge = compatibilityMappedFitnessAge(score: score, chronologicalAge: chronologicalAge)
+        let smoothFactor = compatibilitySmoothingFactor(confidence: confidence)
 
         guard smoothFactor > 0.01 else {
             return baseAge
         }
 
-        return favorablyRounded(
+        return compatibilityAdjustedAge(
             age: baseAge,
             chronologicalAge: chronologicalAge,
             smoothFactor: smoothFactor
@@ -124,7 +179,7 @@ enum FitnessAgeScoreAggregator {
         } / totalWeight
     }
 
-    private static func smoothFavorableFactor(confidence: Double) -> Double {
+    private static func compatibilitySmoothingFactor(confidence: Double) -> Double {
         let peak = 0.7
         let lowerBound = 0.5
         let upperBound = 0.9
@@ -143,7 +198,7 @@ enum FitnessAgeScoreAggregator {
         return (1.0 - cos(normalizedPosition * .pi)) / 2.0
     }
 
-    private static func favorablyRounded(
+    private static func compatibilityAdjustedAge(
         age: Double,
         chronologicalAge: Int,
         smoothFactor: Double
@@ -159,7 +214,7 @@ enum FitnessAgeScoreAggregator {
         }
     }
 
-    private static func calibratedFitnessAge(score: Double, chronologicalAge: Int) -> Double {
+    private static func compatibilityMappedFitnessAge(score: Double, chronologicalAge: Int) -> Double {
         let boundedScore = score.clamped(to: 0...100)
         let ageDifference: Double
 

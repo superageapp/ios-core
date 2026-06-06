@@ -21,7 +21,11 @@ struct FitnessAgePublicArtifactAuditTests {
         joined("copy", "cat"),
         phrase("borrowed", "naming"),
         phrase("tuned", "to", "shape"),
-        phrase("does", "not", "broadly", "age")
+        phrase("does", "not", "broadly", "age"),
+        phrase("favorable", "rounding"),
+        phrase("enhanced", "bonus"),
+        joined("gar", "min", "-", "style"),
+        phrase("product", "tuning")
     ]
     private static let deniedPhrases = competitorTerms + provenanceTerms
     private static let singleWordDeniedPhrases = Set(

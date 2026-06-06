@@ -55,9 +55,24 @@ let confidence = result.confidence
 let domainScores = result.domainScores
 ```
 
+`FitnessAgeConfiguration.default` uses the `evidenceFirst` algorithm mode. This
+mode keeps confidence as an evidence-completeness field and maps the normalized
+score symmetrically around chronological age.
+
+Existing SuperAge integrations that need result continuity can opt into the
+versioned compatibility mode explicitly:
+
+```swift
+let input = FitnessAgeInput(
+    profile: profile,
+    metrics: metrics,
+    configuration: .compatibilityV1
+)
+```
+
 ## Methodology
 
-See [Docs/METHODOLOGY.md](Docs/METHODOLOGY.md) for the initial Fitness Age domains, weights, missing-data behavior, opportunistic Apple Health metrics, scoring curves, confidence logic, score-to-age conversion, golden parity tests, and contributor rules for algorithm changes.
+See [Docs/METHODOLOGY.md](Docs/METHODOLOGY.md) for the initial Fitness Age domains, weights, algorithm modes, missing-data behavior, opportunistic Apple Health metrics, scoring curves, confidence logic, score-to-age conversion, golden parity tests, source anchors, and contributor rules for algorithm changes.
 
 ## Scope
 

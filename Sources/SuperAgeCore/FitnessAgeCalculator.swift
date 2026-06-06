@@ -58,12 +58,14 @@ public struct FitnessAgeCalculator: Sendable {
         let confidence = FitnessAgeScoreAggregator.confidence(
             metrics: filteredMetrics,
             domainScores: domainScores,
-            profile: input.profile
+            profile: input.profile,
+            configuration: input.configuration
         )
         let fitnessAge = FitnessAgeScoreAggregator.fitnessAge(
             score: overallScore,
             chronologicalAge: input.profile.chronologicalAge,
-            confidence: confidence
+            confidence: confidence,
+            configuration: input.configuration
         )
         let metricsUsed = domainScores.values.reduce(0) { count, domainScore in
             count + domainScore.keyMetrics.count
