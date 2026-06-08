@@ -1,31 +1,42 @@
 # SuperAgeCore
 
-SuperAgeCore is the reference Swift implementation of SuperAge Fitness Age scoring for normalized Apple Health-derived signals.
+[![CI](https://github.com/superageapp/ios-core/actions/workflows/ci.yml/badge.svg)](https://github.com/superageapp/ios-core/actions/workflows/ci.yml)
+[![DCO](https://github.com/superageapp/ios-core/actions/workflows/dco.yml/badge.svg)](https://github.com/superageapp/ios-core/actions/workflows/dco.yml)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
-The package is designed for host apps that already have permission to read health and fitness data and can transform that data into stable, normalized inputs. SuperAgeCore is Foundation-only: it does not import HealthKit, request permissions, collect health data, store personal data, or send data to any server.
+Evidence-first Fitness Age scoring for Swift apps.
 
-Host apps are responsible for user consent, privacy disclosures, health data access, platform policy compliance, and any regulatory obligations that apply to their product and market.
+SuperAgeCore is a Foundation-only Swift package that turns normalized fitness and wellness signals into a deterministic Fitness Age estimate, confidence score, and domain-level breakdown. It is built for host apps that already own health-data access and want the scoring engine to stay small, auditable, testable, and privacy-preserving.
+
+It does not import HealthKit, request permissions, collect health data, store personal data, or send data to any server.
+
+## Why SuperAgeCore
+
+- **Deterministic by design**: the same normalized inputs produce the same Fitness Age result.
+- **Evidence-first default**: confidence measures data completeness, not optimism.
+- **Transparent methodology**: domains, weights, scoring curves, source anchors, and compatibility rules are documented.
+- **Host-owned privacy boundary**: apps provide normalized values; the package never touches user accounts, cloud sync, HealthKit authorization, or network transport.
+- **Compatibility when needed**: existing SuperAge integrations can opt into the versioned `compatibilityV1` mode explicitly.
 
 ## Installation
 
-For private preview or development before the first release tag, add SuperAgeCore
-to your Swift package dependencies from `main`:
+For released builds, pin an exact version so algorithm updates cannot change results through package resolution alone:
+
+```swift
+.package(url: "https://github.com/superageapp/ios-core.git", exact: "0.1.0")
+```
+
+Use `main` only for unreleased development and preview integration:
 
 ```swift
 .package(url: "https://github.com/superageapp/ios-core.git", branch: "main")
 ```
 
-After the first `0.1.0` preview tag is published, use the versioned dependency:
-
-```swift
-.package(url: "https://github.com/superageapp/ios-core.git", from: "0.1.0")
-```
-
 Then add `SuperAgeCore` as a dependency of the target that performs scoring.
 
-## API
+## Quick Start
 
-The scoring API uses explicit, normalized inputs supplied by a host app.
+The scoring API uses explicit, normalized inputs supplied by the host app.
 
 ```swift
 import SuperAgeCore
@@ -50,17 +61,19 @@ let input = FitnessAgeInput(
 
 let result = FitnessAgeCalculator().calculate(input)
 
-let fitnessAgeForDisplay = (result.fitnessAge * 10).rounded() / 10
+let fitnessAge = (result.fitnessAge * 10).rounded() / 10
 let confidence = result.confidence
+let overallScore = result.overallScore
 let domainScores = result.domainScores
 ```
 
-`FitnessAgeConfiguration.default` uses the `evidenceFirst` algorithm mode. This
-mode keeps confidence as an evidence-completeness field and maps the normalized
-score symmetrically around chronological age.
+`result.fitnessAge` is intended for informational fitness and wellness experiences. It is not a diagnosis or clinical risk estimate.
 
-Existing SuperAge integrations that need result continuity can opt into the
-versioned compatibility mode explicitly:
+## Algorithm Modes
+
+`FitnessAgeConfiguration.default` uses the `evidenceFirst` algorithm mode. This mode keeps confidence as an evidence-completeness field and maps the normalized score symmetrically around chronological age.
+
+Existing SuperAge integrations that need result continuity can opt into the versioned compatibility mode:
 
 ```swift
 let input = FitnessAgeInput(
@@ -70,15 +83,52 @@ let input = FitnessAgeInput(
 )
 ```
 
+Custom host apps can also provide explicit domain weights and score-to-age mapping bounds through `FitnessAgeConfiguration`.
+
 ## Methodology
 
-See [Docs/METHODOLOGY.md](Docs/METHODOLOGY.md) for the initial Fitness Age domains, weights, algorithm modes, missing-data behavior, opportunistic Apple Health metrics, scoring curves, confidence logic, score-to-age conversion, golden parity tests, source anchors, and contributor rules for algorithm changes.
+See [Docs/METHODOLOGY.md](Docs/METHODOLOGY.md) for:
+
+- Fitness Age domains and weights
+- supported normalized metrics
+- missing-data behavior
+- opportunistic Apple Health-derived metrics
+- scoring curves and confidence logic
+- score-to-age conversion
+- golden parity tests
+- source anchors
+- contributor rules for algorithm changes
+
+Algorithm changes are handled through the repository RFC process before implementation so formula, weight, confidence, and output-changing metric updates can be reviewed with methodology and test evidence.
+
+## Release Policy
+
+SuperAgeCore follows semantic versioning.
+
+- Patch releases (`0.1.x`) are for bug fixes, documentation, and test updates that do not intentionally change scoring output.
+- Minor releases (`0.x.0`) may change formulas, weights, confidence logic, supported metrics, or expected results.
+- Every output-changing release must describe affected metrics, formulas, weights, confidence behavior, and expected result drift in [CHANGELOG.md](CHANGELOG.md).
+- Host apps should pin exact package versions and choose when to adopt algorithm changes.
+
+Releases are created from GitHub Actions after CI passes and the changelog section for that version is ready.
+
+When a pull request is merged to `main`, the release workflow reads the latest dated SemVer section in `CHANGELOG.md`. If the matching tag does not exist, it runs the Swift checks, creates an annotated tag, and publishes a GitHub Release. This means every merge to `main` is expected to be release-ready.
+
+The release workflow can also be run manually from GitHub Actions for a specific version.
 
 ## Scope
 
-SuperAgeCore focuses on deterministic Fitness Age scoring from normalized Apple Health-derived signals supplied by a host app. It does not own data collection, permission prompts, HealthKit queries, account systems, cloud sync, or user-facing medical interpretation.
+SuperAgeCore focuses on deterministic Fitness Age scoring from normalized fitness and wellness signals supplied by a host app.
 
-Algorithm changes are handled through the repository RFC process before implementation so formula, weight, confidence, and output-changing metric updates can be reviewed with methodology and test evidence.
+It does not own:
+
+- HealthKit queries or authorization prompts
+- data collection or wearable sync
+- account systems or cloud storage
+- personalized medical interpretation
+- regulatory compliance for a host product
+
+Host apps are responsible for user consent, privacy disclosures, health data access, platform policy compliance, and any regulatory obligations that apply to their product and market.
 
 ## Health Disclaimer
 
@@ -88,7 +138,13 @@ Do not use SuperAgeCore outputs to diagnose, prevent, monitor, treat, or manage 
 
 ## Contributing
 
-Contributions are welcome under the rules in [CONTRIBUTING.md](CONTRIBUTING.md). All commits in pull requests must include a DCO signoff.
+Contributions are welcome under the rules in [CONTRIBUTING.md](CONTRIBUTING.md). All commits in pull requests must include a DCO signoff:
+
+```bash
+git commit --signoff
+```
+
+Formula, weight, confidence, or output-changing metric updates should start with an Algorithm RFC issue.
 
 ## License
 
