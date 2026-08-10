@@ -78,6 +78,58 @@ Sleep uses an explicit fallback to preserve deterministic continuity when a call
 
 Disabled metric IDs are applied before scoring by clearing the mapped metric fields from the input copy. Excluded domains are applied after domain scoring and remove those domains from results, weighted aggregation, confidence domain completeness, and metric counts.
 
+## Mobility Context and Instrument Applicability
+
+Many Apple Health-derived metrics are produced by step and gait detection. When that detection cannot run, the host does not receive a low value: it receives a value that does not describe the person. Wearables have been reported as recording zero steps for someone walking with a walker. Scoring that as inactivity is a measurement error, not a fitness result.
+
+`FitnessAgeProfile.mobilityContext` lets a host declare which movement instruments can be observed, so the calculator scores only applicable ones.
+
+This is a measurement-applicability input. It is not a diagnosis, not a clinical classification, and not a statement about health status. It changes no threshold, curve, weight, or score.
+
+| Context | Meaning |
+| --- | --- |
+| `ambulatory` | Walks unaided, or with a cane. Every movement instrument applies. This is the default. |
+| `assistedAmbulation` | Walks with a device that provides weight-bearing support, such as a walker or crutches. |
+| `nonAmbulatory` | Does not ambulate; movement is wheeled. |
+
+Metric applicability by context:
+
+| Metric ID | `ambulatory` | `assistedAmbulation` | `nonAmbulatory` |
+| --- | :---: | :---: | :---: |
+| `steps` | applies | not observable | not observable |
+| `six_minute_walk_distance` | applies | not observable | not observable |
+| `flights_climbed` | applies | not observable | not observable |
+| `stair_ascent_speed` | applies | not observable | not observable |
+| `stair_descent_speed` | applies | not observable | not observable |
+| `walking_heart_rate_average` | applies | not observable | not observable |
+| `walking_steadiness` | applies | not observable | not observable |
+| `walking_asymmetry` | applies | not observable | not observable |
+| `double_support` | applies | not observable | not observable |
+| `stand_hours` | applies | applies | not observable |
+
+Metrics that are not observable for the declared context are unioned with `disabledMetricIds` before scoring, so they follow exactly the documented removal path of a host-disabled metric: the field is cleared, the domain divides by the observed local weights that remain, and data quality averages over observed components only. Removing an inapplicable instrument is therefore identical to never having supplied it.
+
+The lifestyle metrics `movement_regularity`, `activity_consistency`, and `sedentary_time` are derived from `stepCount`, so they drop out with it and require no separate mapping.
+
+No domain collapses from the context alone. Under `nonAmbulatory`, activity remains scorable through `activeEnergy` and `exerciseTime`, and lifestyle remains scorable through `isSmoker` and `timeInDaylight`.
+
+### Where the Boundaries Come From
+
+- Step counting is described in measurement research as applicable only to ambulatory populations, with detection degrading further under slow or irregular gait (Suzuki et al., 2025).
+- Weight-bearing walking aids break step detection rather than merely adding noise. Wrist and hip devices have been reported as showing poor validity in patients using gait aids, recording near-zero step counts during walker use, with agreement recovering only once the aid was no longer used (Kooner et al., 2024). Wrist step-count error during walker use has been reported at 31.2 percent (Jaworski et al., 2025).
+- Cane use is on the other side of that boundary. Wrist step counting during cane use has been reported at roughly two percent mean error, which is measurement noise, not inapplicability, so cane users are `ambulatory` (Jaworski et al., 2025).
+- Gait-quality instruments derive from the same step and gait characterization, so they follow step counting rather than forming a separate tier.
+- Standing is observable with a walker or crutches and not with wheeled mobility, which is the only instrument difference between the two non-default contexts.
+- Activity targets themselves are not context-specific. The WHO 2020 guidelines added recommendations for people living with chronic conditions or disability, so `activeEnergy` and `exerciseTime` remain the applicable activity instruments rather than being replaced by different targets (Bull et al., 2020).
+
+### Deliberately Out of Scope
+
+This mechanism removes instruments that cannot be observed. It does not adjust targets for conditions where the instrument works but the expected value is debated, such as fatigue-related or mental-health-related conditions: step count is measurable there, and changing its target without an evidence anchor would be a scoring change presented as an applicability change. Such an adjustment would require an Algorithm RFC and its own source anchors.
+
+Energy-based instruments are not free of population-specific measurement error either: waist-worn accelerometry has been shown to underestimate energy expenditure in manual wheelchair users, and device placement changes the error materially (Nightingale et al., 2015). SuperAgeCore consumes host-normalized values and does not correct for sensor placement.
+
+Hosts remain responsible for how this value is collected and for the privacy and consent obligations that attach to it.
+
 ## Domain Metric Weights
 
 Within each domain, observed metric scores are weighted locally, then normalized by the total observed local weight:
@@ -181,6 +233,11 @@ uses package-specific interpolation to convert observations into a common
 | Six-minute walk distance | Apple HealthKit six-minute walk distance behavior: https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifiersixminutewalktestdistance | Age bands and activity-domain weighting |
 | Blood glucose | CDC and ADA fasting glucose thresholds: https://www.cdc.gov/diabetes/diabetes-testing/index.html and https://diabetes.org/about-diabetes/diagnosis | Score levels around normal, elevated, and high ranges |
 | Sleep duration | National Sleep Foundation duration recommendations discussed in population research: https://pmc.ncbi.nlm.nih.gov/articles/PMC8201191/ | Midpoint scoring and duration deviation curve |
+| Step counting applicability | Suzuki et al., JMIR Formative Research, 2025, stating that step counting applies only to ambulatory patients and degrades with irregular gait: https://pmc.ncbi.nlm.nih.gov/articles/PMC11999377/ | Mapping from mobility context to the set of unobservable metric IDs |
+| Step detection under walking aids | Kooner et al., Journal of Orthopaedic Surgery and Research, 2024, reporting poor validity of wrist and hip activity monitors in patients using gait aids: https://pmc.ncbi.nlm.nih.gov/articles/PMC11247726/ | Placing walker and crutch use outside the ambulatory context |
+| Walking aid error magnitude | Jaworski et al., International Journal of Environmental Research and Public Health, 2025, reporting 31.2 percent wrist step-count error with a walker and roughly two percent with a cane: https://pmc.ncbi.nlm.nih.gov/articles/PMC12294748/ | Keeping cane use inside the ambulatory context |
+| Activity targets across mobility contexts | Bull et al., British Journal of Sports Medicine, 2020, WHO 2020 guidelines adding recommendations for people living with chronic conditions or disability: https://pubmed.ncbi.nlm.nih.gov/33239350/ | Keeping the same activity instruments and targets instead of substituting context-specific ones |
+| Wheeled-mobility activity measurement error | Nightingale et al., PLoS One, 2015, on accelerometer placement and energy expenditure error in manual wheelchair users: https://pmc.ncbi.nlm.nih.gov/articles/PMC4425541/ | Documented limitation only; the package consumes host-normalized values |
 
 ## Scoring Curves
 

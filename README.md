@@ -69,6 +69,22 @@ let domainScores = result.domainScores
 
 `result.fitnessAge` is intended for informational fitness and wellness experiences. It is not a diagnosis or clinical risk estimate.
 
+## Mobility Context
+
+Many Apple Health-derived metrics are produced by step and gait detection. When that detection cannot run, the host does not receive a low value, it receives a value that does not describe the person: wearables have been reported as recording zero steps for someone walking with a walker. Declare the applicable instruments so those metrics are removed rather than scored as inactivity:
+
+```swift
+let profile = FitnessAgeProfile(
+    chronologicalAge: 42,
+    biologicalSex: .male,
+    mobilityContext: .nonAmbulatory
+)
+```
+
+`ambulatory` is the default and removes nothing; it covers unaided walking and cane use. `assistedAmbulation` covers walkers and crutches and removes step-derived and gait-derived instruments while keeping standing. `nonAmbulatory` also removes standing. Domains renormalize over the instruments that remain, so no threshold, curve, or weight changes.
+
+This is a measurement-applicability input, not a diagnosis or clinical classification. Hosts are responsible for how the value is collected and for the consent and privacy obligations that attach to it. See [Docs/METHODOLOGY.md](Docs/METHODOLOGY.md) for the per-context applicability table and source anchors.
+
 ## Algorithm Modes
 
 `FitnessAgeConfiguration.default` uses the `evidenceFirst` algorithm mode. This mode keeps confidence as an evidence-completeness field and maps the normalized score symmetrically around chronological age.
