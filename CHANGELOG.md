@@ -6,6 +6,18 @@ Algorithm changes must note affected metrics, formulas, weights, confidence logi
 
 ## Unreleased
 
+## 0.2.0 - 2026-08-10
+
+### Added
+
+- Added `FitnessAgeMobilityContext` and `FitnessAgeProfile.mobilityContext`, a measurement-applicability input that declares which movement instruments can be observed for a person. Metrics produced by step and gait detection are removed before scoring when the declared context cannot produce them, instead of reaching the calculator as a value that reads like inactivity.
+- Added `FitnessAgeProfile.effectiveDisabledMetricIds`, exposing the host-disabled metric IDs unioned with the IDs the mobility context cannot observe.
+- Documented mobility context, the per-context applicability table, where each boundary comes from, and what is deliberately out of scope, with source anchors for step-counting applicability, step detection under walking aids, walking-aid error magnitude, activity targets across mobility contexts, and wheeled-mobility measurement error.
+
+No result drift for existing callers. `mobilityContext` defaults to `ambulatory`, which removes no metric; encoded profiles that omit the field decode to `ambulatory`. Golden fixtures are unchanged.
+
+Affected metrics under a non-default context: `steps`, `six_minute_walk_distance`, `flights_climbed`, `stair_ascent_speed`, `stair_descent_speed`, `walking_heart_rate_average`, `walking_steadiness`, `walking_asymmetry`, `double_support`, and the step-derived lifestyle metrics `movement_regularity`, `activity_consistency`, and `sedentary_time`. `stand_hours` is additionally removed under `nonAmbulatory` only. No formula, curve, local weight, domain weight, or confidence rule changed. Removal reuses the existing disabled-metric path, so domains renormalize over the observed local weights that remain.
+
 ## 0.1.0 - 2026-06-06
 
 ### Added

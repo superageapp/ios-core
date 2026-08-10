@@ -46,7 +46,9 @@ public struct FitnessAgeCalculator: Sendable {
             )
         }
 
-        let filteredMetrics = input.metrics.filteringDisabledMetricIds(input.profile.disabledMetricIds)
+        let filteredMetrics = input.metrics.filteringDisabledMetricIds(
+            input.profile.effectiveDisabledMetricIds
+        )
         let domainScores = FitnessAgeDomainScorer().domainScores(
             metrics: filteredMetrics,
             profile: input.profile
