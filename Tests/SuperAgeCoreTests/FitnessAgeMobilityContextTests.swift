@@ -55,9 +55,9 @@ struct FitnessAgeMobilityContextTests {
         #expect(implicit == explicit)
     }
 
-    @Test("assisted ambulation removes step and gait derived instruments but keeps standing")
-    func assistedAmbulationRemovesStepAndGaitDerivedInstruments() {
-        let removed = FitnessAgeMobilityContext.assistedAmbulation.inapplicableMetricIds
+    @Test("assisted mobility removes step and gait derived instruments")
+    func assistedMobilityRemovesStepAndGaitDerivedInstruments() {
+        let removed = FitnessAgeMobilityContext.assistedMobility.inapplicableMetricIds
 
         #expect(removed == [
             "steps",
@@ -70,19 +70,13 @@ struct FitnessAgeMobilityContextTests {
             "walking_asymmetry",
             "double_support"
         ])
-        // Standing remains observable with a walker or crutches.
-        #expect(!removed.contains("stand_hours"))
     }
 
-    @Test("non ambulatory additionally removes standing instruments")
-    func nonAmbulatoryAdditionallyRemovesStandingInstruments() {
-        let removed = FitnessAgeMobilityContext.nonAmbulatory.inapplicableMetricIds
-
-        #expect(removed.isSuperset(of: FitnessAgeMobilityContext.assistedAmbulation.inapplicableMetricIds))
-        #expect(removed.contains("stand_hours"))
-        #expect(removed.subtracting(
-            FitnessAgeMobilityContext.assistedAmbulation.inapplicableMetricIds
-        ) == ["stand_hours"])
+    @Test("hourly movement stays observable under assisted mobility")
+    func hourlyMovementStaysObservableUnderAssistedMobility() {
+        // Apple Watch turns the Stand ring into a Roll ring in wheelchair mode and counts
+        // hours containing at least a minute of movement, so the instrument still applies.
+        #expect(!FitnessAgeMobilityContext.assistedMobility.inapplicableMetricIds.contains("stand_hours"))
     }
 
     @Test("cane use is not an applicability boundary")
@@ -92,10 +86,10 @@ struct FitnessAgeMobilityContextTests {
         #expect(FitnessAgeMobilityContext.ambulatory.inapplicableMetricIds.isEmpty)
     }
 
-    @Test("non ambulatory keeps every domain scorable on applicable instruments")
-    func nonAmbulatoryKeepsEveryDomainScorable() {
+    @Test("assisted mobility keeps every domain scorable on applicable instruments")
+    func assistedMobilityKeepsEveryDomainScorable() {
         let result = FitnessAgeCalculator().calculate(
-            FitnessAgeInput(profile: Self.profile(.nonAmbulatory), metrics: Self.metrics())
+            FitnessAgeInput(profile: Self.profile(.assistedMobility), metrics: Self.metrics())
         )
 
         // Activity survives on active energy and exercise time; lifestyle on smoking
@@ -109,7 +103,7 @@ struct FitnessAgeMobilityContextTests {
 
     @Test("inapplicable instruments are removed rather than scored as zero")
     func inapplicableInstrumentsAreRemovedRatherThanScoredAsZero() {
-        let profile = Self.profile(.nonAmbulatory)
+        let profile = Self.profile(.assistedMobility)
 
         // Same person, same applicable observations: one input simply omits the metrics
         // the context cannot observe. Removing an instrument must be identical to never
@@ -118,7 +112,6 @@ struct FitnessAgeMobilityContextTests {
         applicableOnly.stepCount = nil
         applicableOnly.flightsClimbed = nil
         applicableOnly.sixMinuteWalkTestDistance = nil
-        applicableOnly.standHours = nil
         applicableOnly.stairAscentSpeed = nil
         applicableOnly.stairDescentSpeed = nil
         applicableOnly.walkingHeartRateAverage = nil
@@ -146,7 +139,7 @@ struct FitnessAgeMobilityContextTests {
             chronologicalAge: 42,
             biologicalSex: .male,
             disabledMetricIds: ["vo2max"],
-            mobilityContext: .nonAmbulatory
+            mobilityContext: .assistedMobility
         )
 
         #expect(profile.effectiveDisabledMetricIds.contains("vo2max"))
@@ -162,16 +155,16 @@ struct FitnessAgeMobilityContextTests {
         #expect(decoded.mobilityContext == .ambulatory)
 
         let explicit = Data(
-            #"{"chronologicalAge":42,"biologicalSex":"male","mobilityContext":"nonAmbulatory"}"#.utf8
+            #"{"chronologicalAge":42,"biologicalSex":"male","mobilityContext":"assistedMobility"}"#.utf8
         )
         let decodedExplicit = try JSONDecoder().decode(FitnessAgeProfile.self, from: explicit)
 
-        #expect(decodedExplicit.mobilityContext == .nonAmbulatory)
+        #expect(decodedExplicit.mobilityContext == .assistedMobility)
     }
 
     @Test("profile round trips through Codable")
     func profileRoundTripsThroughCodable() throws {
-        let profile = Self.profile(.assistedAmbulation)
+        let profile = Self.profile(.assistedMobility)
         let data = try JSONEncoder().encode(profile)
         let decoded = try JSONDecoder().decode(FitnessAgeProfile.self, from: data)
 

@@ -6,6 +6,15 @@ Algorithm changes must note affected metrics, formulas, weights, confidence logi
 
 ## Unreleased
 
+## 0.3.0 - 2026-08-10
+
+### Changed
+
+- Replaced the three-value mobility context with two values: `ambulatory` and `assistedMobility`. `assistedAmbulation` and `nonAmbulatory` are removed. Weight-bearing walking aids and wheeled mobility share one applicability boundary, because step and gait detection fails for both, so a separate case described no separate behavior.
+- `stand_hours` is no longer removed by any context. On Apple Watch, wheelchair mode turns the Stand ring into a Roll ring that counts hours containing at least a minute of movement against the same daily goal, so the instrument remains observable. The 0.2.0 applicability table was wrong on this point.
+
+Callers on 0.2.0 must map `assistedAmbulation` and `nonAmbulatory` to `assistedMobility`. Encoded profiles carrying a removed raw value decode to `ambulatory` through the existing `decodeIfPresent` default. Behavior for `ambulatory` is unchanged and golden fixtures are unchanged.
+
 ## 0.2.0 - 2026-08-10
 
 ### Added

@@ -77,11 +77,11 @@ Many Apple Health-derived metrics are produced by step and gait detection. When 
 let profile = FitnessAgeProfile(
     chronologicalAge: 42,
     biologicalSex: .male,
-    mobilityContext: .nonAmbulatory
+    mobilityContext: .assistedMobility
 )
 ```
 
-`ambulatory` is the default and removes nothing; it covers unaided walking and cane use. `assistedAmbulation` covers walkers and crutches and removes step-derived and gait-derived instruments while keeping standing. `nonAmbulatory` also removes standing. Domains renormalize over the instruments that remain, so no threshold, curve, or weight changes.
+`ambulatory` is the default and removes nothing; it covers unaided walking and cane use. `assistedMobility` covers walkers, crutches and wheeled mobility, and removes the step-derived and gait-derived instruments. Hourly movement is kept in both: on Apple Watch the Stand ring becomes a Roll ring in wheelchair mode. Domains renormalize over the instruments that remain, so no threshold, curve, or weight changes.
 
 This is a measurement-applicability input, not a diagnosis or clinical classification. Hosts are responsible for how the value is collected and for the consent and privacy obligations that attach to it. See [Docs/METHODOLOGY.md](Docs/METHODOLOGY.md) for the per-context applicability table and source anchors.
 

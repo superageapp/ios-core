@@ -89,37 +89,36 @@ This is a measurement-applicability input. It is not a diagnosis, not a clinical
 | Context | Meaning |
 | --- | --- |
 | `ambulatory` | Walks unaided, or with a cane. Every movement instrument applies. This is the default. |
-| `assistedAmbulation` | Walks with a device that provides weight-bearing support, such as a walker or crutches. |
-| `nonAmbulatory` | Does not ambulate; movement is wheeled. |
+| `assistedMobility` | Uses a mobility aid that bears weight, such as a walker or crutches, or uses wheeled mobility. |
 
 Metric applicability by context:
 
-| Metric ID | `ambulatory` | `assistedAmbulation` | `nonAmbulatory` |
-| --- | :---: | :---: | :---: |
-| `steps` | applies | not observable | not observable |
-| `six_minute_walk_distance` | applies | not observable | not observable |
-| `flights_climbed` | applies | not observable | not observable |
-| `stair_ascent_speed` | applies | not observable | not observable |
-| `stair_descent_speed` | applies | not observable | not observable |
-| `walking_heart_rate_average` | applies | not observable | not observable |
-| `walking_steadiness` | applies | not observable | not observable |
-| `walking_asymmetry` | applies | not observable | not observable |
-| `double_support` | applies | not observable | not observable |
-| `stand_hours` | applies | applies | not observable |
+| Metric ID | `ambulatory` | `assistedMobility` |
+| --- | :---: | :---: |
+| `steps` | applies | not observable |
+| `six_minute_walk_distance` | applies | not observable |
+| `flights_climbed` | applies | not observable |
+| `stair_ascent_speed` | applies | not observable |
+| `stair_descent_speed` | applies | not observable |
+| `walking_heart_rate_average` | applies | not observable |
+| `walking_steadiness` | applies | not observable |
+| `walking_asymmetry` | applies | not observable |
+| `double_support` | applies | not observable |
+| `stand_hours` | applies | applies |
 
 Metrics that are not observable for the declared context are unioned with `disabledMetricIds` before scoring, so they follow exactly the documented removal path of a host-disabled metric: the field is cleared, the domain divides by the observed local weights that remain, and data quality averages over observed components only. Removing an inapplicable instrument is therefore identical to never having supplied it.
 
 The lifestyle metrics `movement_regularity`, `activity_consistency`, and `sedentary_time` are derived from `stepCount`, so they drop out with it and require no separate mapping.
 
-No domain collapses from the context alone. Under `nonAmbulatory`, activity remains scorable through `activeEnergy` and `exerciseTime`, and lifestyle remains scorable through `isSmoker` and `timeInDaylight`.
+No domain collapses from the context alone. Under `assistedMobility`, activity remains scorable through `activeEnergy` and `exerciseTime`, and lifestyle remains scorable through `isSmoker` and `timeInDaylight`.
 
 ### Where the Boundaries Come From
 
 - Step counting is described in measurement research as applicable only to ambulatory populations, with detection degrading further under slow or irregular gait (Suzuki et al., 2025).
-- Weight-bearing walking aids break step detection rather than merely adding noise. Wrist and hip devices have been reported as showing poor validity in patients using gait aids, recording near-zero step counts during walker use, with agreement recovering only once the aid was no longer used (Kooner et al., 2024). Wrist step-count error during walker use has been reported at 31.2 percent (Jaworski et al., 2025).
+- Weight-bearing walking aids break step detection rather than merely adding noise. Wrist and hip devices have been reported as showing poor validity in patients using gait aids, recording near-zero step counts during walker use, with agreement recovering only once the aid was no longer used (Kooner et al., 2024). Wrist step-count error during walker use has been reported at 31.2 percent (Jaworski et al., 2025). Wheeled mobility produces no steps at all, so both patterns share one context.
 - Cane use is on the other side of that boundary. Wrist step counting during cane use has been reported at roughly two percent mean error, which is measurement noise, not inapplicability, so cane users are `ambulatory` (Jaworski et al., 2025).
 - Gait-quality instruments derive from the same step and gait characterization, so they follow step counting rather than forming a separate tier.
-- Standing is observable with a walker or crutches and not with wheeled mobility, which is the only instrument difference between the two non-default contexts.
+- Hourly movement remains observable in every context, so `stand_hours` is never removed. On Apple Watch, wheelchair mode turns the Stand ring into a Roll ring that counts hours containing at least a minute of movement, against the same daily goal.
 - Activity targets themselves are not context-specific. The WHO 2020 guidelines added recommendations for people living with chronic conditions or disability, so `activeEnergy` and `exerciseTime` remain the applicable activity instruments rather than being replaced by different targets (Bull et al., 2020).
 
 ### Deliberately Out of Scope

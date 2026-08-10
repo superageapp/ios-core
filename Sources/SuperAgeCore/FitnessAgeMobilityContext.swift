@@ -1,9 +1,9 @@
 import Foundation
 
-/// Declares which movement instruments can be observed for the person being scored.
+/// Declares whether step and gait detection can produce valid values for the person being scored.
 ///
 /// This is a measurement-applicability input, not a clinical classification and not a
-/// diagnosis. Several Apple Health-derived metrics are produced by step and gait detection.
+/// diagnosis. Many Apple Health-derived metrics are produced by step and gait detection.
 /// When that detection cannot run, the host does not receive a low value, it receives a
 /// value that does not describe the person: wearables have been reported as recording zero
 /// steps for someone walking with a walker. Without this declaration the calculator cannot
@@ -20,20 +20,17 @@ public enum FitnessAgeMobilityContext: String, Codable, Sendable, CaseIterable {
     /// noise rather than an applicability boundary.
     case ambulatory
 
-    /// Walks with a device that provides weight-bearing support, such as a walker or crutches.
+    /// Uses a mobility aid that bears weight, such as a walker or crutches, or uses wheeled mobility.
     ///
-    /// Step and gait detection is unreliable for this pattern, so step-derived and
-    /// gait-derived instruments do not apply. Standing is still observable.
-    case assistedAmbulation
-
-    /// Does not ambulate; movement is wheeled.
-    ///
-    /// No step-derived, gait-derived, or standing instrument applies.
-    case nonAmbulatory
+    /// Step and gait detection does not produce valid values for these movement patterns, so
+    /// step-derived and gait-derived instruments do not apply. Hourly movement is still
+    /// observable: on Apple Watch the Stand ring becomes a Roll ring in wheelchair mode and
+    /// counts hours containing at least a minute of movement, so `stand_hours` is retained.
+    case assistedMobility
 }
 
 public extension FitnessAgeMobilityContext {
-    /// Metric IDs whose observation depends on a movement pattern this context does not produce.
+    /// Metric IDs whose observation depends on step or gait detection this context does not produce.
     ///
     /// These IDs are unioned with `FitnessAgeProfile.disabledMetricIds` before scoring, so
     /// they follow exactly the same documented removal path as a host-disabled metric.
@@ -41,10 +38,8 @@ public extension FitnessAgeMobilityContext {
         switch self {
         case .ambulatory:
             return []
-        case .assistedAmbulation:
+        case .assistedMobility:
             return Self.stepAndGaitDerivedMetricIds
-        case .nonAmbulatory:
-            return Self.stepAndGaitDerivedMetricIds.union(Self.uprightPostureMetricIds)
         }
     }
 
@@ -59,10 +54,5 @@ public extension FitnessAgeMobilityContext {
         "walking_steadiness",
         "walking_asymmetry",
         "double_support"
-    ]
-
-    /// Instruments that require standing.
-    static let uprightPostureMetricIds: Set<String> = [
-        "stand_hours"
     ]
 }
