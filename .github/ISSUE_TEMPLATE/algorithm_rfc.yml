@@ -1,0 +1,33 @@
+name: Algorithm RFC
+description: Propose a formula, weight, confidence, or output-changing metric update
+title: "[RFC]: "
+labels: ["algorithm-rfc"]
+body:
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: Explain why this algorithm change is needed.
+    validations:
+      required: true
+  - type: textarea
+    id: affected
+    attributes:
+      label: Affected metrics and domains
+      description: List formulas, metrics, domains, weights, confidence logic, or outputs affected by this proposal.
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: Expected output impact
+      description: Describe expected result drift, compatibility impact, and user-visible changes.
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation
+      description: Describe proposed test updates and methodology documentation updates.
+    validations:
+      required: true

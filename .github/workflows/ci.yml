@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Swift ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v6
+      - name: Show Swift version
+        run: swift --version
+      - name: Build
+        run: swift build
+      - name: Test
+        run: swift test
+
+  platforms:
+    name: Build ${{ matrix.platform.name }}
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - { name: iOS, destination: generic/platform=iOS Simulator }
+          - { name: watchOS, destination: generic/platform=watchOS Simulator }
+          - { name: tvOS, destination: generic/platform=tvOS Simulator }
+    steps:
+      - uses: actions/checkout@v6
+      - name: Build for ${{ matrix.platform.name }}
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -scheme SuperAgeCore \
+            -destination '${{ matrix.platform.destination }}' \
+            CODE_SIGNING_ALLOWED=NO

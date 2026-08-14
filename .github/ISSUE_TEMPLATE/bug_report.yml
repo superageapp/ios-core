@@ -1,0 +1,26 @@
+name: Bug report
+description: Report incorrect behavior in SuperAgeCore
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: Describe the incorrect behavior and the expected behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction
+      description: Provide input values, steps to reproduce, and expected vs actual output.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Include Swift version, platform, and SuperAgeCore package version.
+    validations:
+      required: true
