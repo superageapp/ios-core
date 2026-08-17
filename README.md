@@ -4,7 +4,7 @@
 [![DCO](https://github.com/superageapp/ios-core/actions/workflows/dco.yml/badge.svg)](https://github.com/superageapp/ios-core/actions/workflows/dco.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
-Evidence-first Fitness Age scoring for Swift apps.
+Open-source Swift package for evidence-first Fitness Age (biological age) scoring in iOS, watchOS, macOS, and tvOS apps. It is the scoring engine behind the SuperAge app.
 
 SuperAgeCore is a Foundation-only Swift package that turns normalized fitness and wellness signals into a deterministic Fitness Age estimate, confidence score, and domain-level breakdown. It is built for host apps that already own health-data access and want the scoring engine to stay small, auditable, testable, and privacy-preserving.
 
@@ -153,6 +153,15 @@ Host apps are responsible for user consent, privacy disclosures, health data acc
 SuperAgeCore provides an informational fitness and wellness estimate only. It is not a diagnosis, medical device, treatment, clinical risk assessment, or substitute for professional medical advice.
 
 Do not use SuperAgeCore outputs to diagnose, prevent, monitor, treat, or manage any disease or medical condition. Users should consult a qualified healthcare professional for health concerns, symptoms, or medical decisions.
+
+## Useful Links
+
+- [SuperAge website](https://www.superage.app) — the biological age app for iPhone and Apple Watch, powered by SuperAgeCore
+- [SuperAge on the App Store](https://apps.apple.com/app/id6751951815) — download the app for iOS
+- [Methodology](Docs/METHODOLOGY.md) — Fitness Age domains, weights, scoring curves, confidence logic, and source anchors
+- [Changelog](CHANGELOG.md) — release notes and expected result drift for every version
+- [Contributing guide](CONTRIBUTING.md) — DCO signoff and the Algorithm RFC process
+- [Issues](https://github.com/superageapp/ios-core/issues) — bug reports, questions, and Algorithm RFC proposals
 
 ## Contributing
 
