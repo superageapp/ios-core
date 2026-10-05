@@ -8,8 +8,11 @@ public enum FitnessAgeBiologicalSex: String, Codable, Sendable {
 }
 
 public struct FitnessAgeProfile: Codable, Equatable, Sendable {
-    /// Chronological age in whole years.
-    public var chronologicalAge: Int
+    /// Chronological age in years, including the fraction since the last birthday.
+    ///
+    /// Hosts calculate this value from the date of birth. The core does not read a
+    /// clock or calendar and does not round the value before scoring.
+    public var chronologicalAge: Double
     public var biologicalSex: FitnessAgeBiologicalSex
     /// Domains removed from scoring, aggregation, confidence, and results.
     public var excludedDomains: Set<FitnessAgeDomain>
@@ -28,10 +31,11 @@ public struct FitnessAgeProfile: Codable, Equatable, Sendable {
     /// Whether the profile can be scored.
     ///
     /// The algorithm is calibrated for adults. Profiles with a chronological age below 18
-    /// are invalid for calculation and receive the neutral low-confidence result instead of
+    /// or a non-finite/unrepresentable age are invalid and receive a neutral result instead of
     /// a Fitness Age extrapolated from adult reference curves.
     public var isValidForCalculation: Bool {
-        chronologicalAge >= 18
+        chronologicalAge.isFinite && chronologicalAge >= 18
+            && Int(exactly: chronologicalAge.rounded(.down)) != nil
     }
 
     /// Metric IDs removed before scoring: the host-disabled set plus the metrics that the
@@ -41,7 +45,7 @@ public struct FitnessAgeProfile: Codable, Equatable, Sendable {
     }
 
     public init(
-        chronologicalAge: Int,
+        chronologicalAge: Double,
         biologicalSex: FitnessAgeBiologicalSex,
         excludedDomains: Set<FitnessAgeDomain> = [],
         focusDomains: Set<FitnessAgeDomain> = [],
@@ -56,6 +60,25 @@ public struct FitnessAgeProfile: Codable, Equatable, Sendable {
         self.mobilityContext = mobilityContext
     }
 
+    /// Convenience for callers that already hold an age in whole years.
+    public init(
+        chronologicalAge: Int,
+        biologicalSex: FitnessAgeBiologicalSex,
+        excludedDomains: Set<FitnessAgeDomain> = [],
+        focusDomains: Set<FitnessAgeDomain> = [],
+        disabledMetricIds: Set<String> = [],
+        mobilityContext: FitnessAgeMobilityContext = .ambulatory
+    ) {
+        self.init(
+            chronologicalAge: Double(chronologicalAge),
+            biologicalSex: biologicalSex,
+            excludedDomains: excludedDomains,
+            focusDomains: focusDomains,
+            disabledMetricIds: disabledMetricIds,
+            mobilityContext: mobilityContext
+        )
+    }
+
     private enum CodingKeys: String, CodingKey {
         case chronologicalAge
         case biologicalSex
@@ -67,7 +90,8 @@ public struct FitnessAgeProfile: Codable, Equatable, Sendable {
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        chronologicalAge = try container.decodeIfPresent(Int.self, forKey: .chronologicalAge) ?? 0
+        // JSONDecoder accepts both the legacy integer and fractional number shapes.
+        chronologicalAge = try container.decodeIfPresent(Double.self, forKey: .chronologicalAge) ?? 0
         biologicalSex = try container.decodeIfPresent(FitnessAgeBiologicalSex.self, forKey: .biologicalSex) ?? .unknown
         excludedDomains = try container.decodeIfPresent(Set<FitnessAgeDomain>.self, forKey: .excludedDomains) ?? []
         focusDomains = try container.decodeIfPresent(Set<FitnessAgeDomain>.self, forKey: .focusDomains) ?? []

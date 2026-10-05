@@ -49,7 +49,7 @@ public struct FitnessAgeResult: Codable, Equatable, Sendable {
     /// The estimated Fitness Age in years.
     public var fitnessAge: Double
     /// The chronological age the estimate was computed against.
-    public var chronologicalAge: Int
+    public var chronologicalAge: Double
     /// Evidence completeness on a `0.1...1.0` scale; see Docs/METHODOLOGY.md.
     public var confidence: Double
     /// The scored domains; domains without observed metrics are absent.
@@ -68,12 +68,12 @@ public struct FitnessAgeResult: Codable, Equatable, Sendable {
 
     /// `fitnessAge - chronologicalAge`; negative values mean a younger Fitness Age.
     public var difference: Double {
-        fitnessAge - Double(chronologicalAge)
+        fitnessAge - chronologicalAge
     }
 
     public init(
         fitnessAge: Double,
-        chronologicalAge: Int,
+        chronologicalAge: Double,
         confidence: Double,
         domainScores: [FitnessAgeDomain: FitnessAgeDomainScore],
         overallScore: Double,
@@ -87,6 +87,27 @@ public struct FitnessAgeResult: Codable, Equatable, Sendable {
         self.overallScore = overallScore.clamped(to: 0...100)
         self.metricsUsed = metricsUsed
         self.totalPossibleMetrics = totalPossibleMetrics
+    }
+
+    /// Convenience for callers that already hold an age in whole years.
+    public init(
+        fitnessAge: Double,
+        chronologicalAge: Int,
+        confidence: Double,
+        domainScores: [FitnessAgeDomain: FitnessAgeDomainScore],
+        overallScore: Double,
+        metricsUsed: Int,
+        totalPossibleMetrics: Int
+    ) {
+        self.init(
+            fitnessAge: fitnessAge,
+            chronologicalAge: Double(chronologicalAge),
+            confidence: confidence,
+            domainScores: domainScores,
+            overallScore: overallScore,
+            metricsUsed: metricsUsed,
+            totalPossibleMetrics: totalPossibleMetrics
+        )
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -103,7 +124,7 @@ public struct FitnessAgeResult: Codable, Equatable, Sendable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let decodedFitnessAge = try container.decodeIfPresent(Double.self, forKey: .fitnessAge) ?? 0
-        let decodedChronologicalAge = try container.decodeIfPresent(Int.self, forKey: .chronologicalAge) ?? 0
+        let decodedChronologicalAge = try container.decodeIfPresent(Double.self, forKey: .chronologicalAge) ?? 0
         let rawDomainScores = try container.decodeIfPresent(
             [String: FitnessAgeDomainScore].self,
             forKey: .domainScores

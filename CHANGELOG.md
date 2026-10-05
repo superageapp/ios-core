@@ -6,6 +6,19 @@ Algorithm changes must note affected metrics, formulas, weights, confidence logi
 
 ## Unreleased
 
+## 0.5.0 - 2026-10-05
+
+### Changed
+
+- Chronological age in `FitnessAgeProfile` and `FitnessAgeResult` is now `Double`. Integer initializer overloads remain available, and legacy JSON integer ages still decode. Hosts can supply the daily fraction since the last birthday without rounding it to whole years. Source migration: code that reads either public age property into an `Int`, or assigns an `Int` variable directly to it, must convert explicitly. Callers should preserve the `Double` value through calculation and persistence.
+- Fractional ages interpolate complete adjacent integer-age calculations, preserving the 0.4.0 integer results in every algorithm mode. Fitness Age, overall/domain scores, confidence modifiers, and age-derived key indicators transition throughout the year instead of jumping on birthdays or age-band changes. Domain relative standing is recomputed from each interpolated score. Observations, missing-data rules, metric/domain weights, instrument counts and adult eligibility remain unchanged. Expected drift: fractional-age inputs fall between the existing results at the two adjacent whole ages; integer-age inputs do not drift. This includes VO₂max decade references, HRV and composition reference bands, compatibility age limits, and the focus-domain confidence modifier. See [Algorithm RFC #7](https://github.com/superageapp/ios-core/issues/7).
+- Non-finite or integer-unrepresentable ages safely return neutral low-confidence results rather than risking a conversion trap; non-finite ages are represented as zero in the neutral result so default JSON encoding remains possible.
+
+### Added
+
+- Independently generated continuous-age golden fixtures, including exact whole-age parity against the app's pinned revision `e1fec4603e67e63532c2c880105f68353b8fad84`, female and male references, all mapping modes, partial/disabled/excluded observations, assisted mobility, empty data and a focus-confidence threshold crossing.
+- Birthday continuity tests for ages 19 through 90, fractional adult-boundary and invalid-age tests, and legacy/fractional Codable round trips.
+
 ## 0.4.0 - 2026-08-14
 
 ### Fixed
