@@ -14,6 +14,59 @@ The calculator accepts `FitnessAgeInput`, which combines:
 
 The algorithm is calibrated for chronological ages 18 and over. Profiles with a lower age are invalid for calculation and return the neutral low-confidence result: Fitness Age equal to chronological age, overall score `50`, confidence `0.10`, and no domain scores.
 
+### Continuous Chronological Age
+
+Starting with 0.5.0, chronological age is a `Double` supplied by the host, rather
+than an integer number of completed years. The package remains independent of
+the calendar and clock. Hosts should calculate the fraction from civil days
+since the last birthday divided by the civil days between that birthday and the
+next, then add the completed years. A daily value is enough: no second-level
+precision or rounding before scoring is needed. Display formatting is separate
+from the calculation.
+
+For adult age `a`, let `n = floor(a)` and `f = a - n`. Run the existing integer
+algorithm with the same metrics and configuration at `n` and `n + 1`. The output
+interpolation is:
+
+```text
+continuousOutput(a) = integerOutput(n) + f * (integerOutput(n + 1) - integerOutput(n))
+```
+
+Apply this to Fitness Age, overall score, confidence, each present domain score,
+and age-derived key indicators. Observed key metrics stay exactly the same;
+derived observations such as mean arterial pressure and lean mass index also
+stay unchanged when their inputs are unchanged. Domain relative standing is
+computed from the blended domain score using the affine clamp documented below,
+rather than blending already clamped standings. Missing domains and metrics are
+absent observations and never become score zero. Counts and presence depend on
+the observations, disabled metrics, excluded domains and mobility context, which
+are identical at both integer anchors.
+
+At integer ages, evaluate only the existing integer algorithm. Its formulas,
+weights, confidence rules, rounding order and mapping caps are unchanged. This
+preserves exact integer results in `evidenceFirst`, `compatibilityV1` and `custom`
+modes while distributing every birthday/reference-band change over the preceding
+year. Interpolation happens on complete Fitness Age results, including the
+compatibility mapping's nonlinearity and caps; mapping an interpolated score
+again would produce a different algorithm. This smooths output values, not
+their derivatives: the daily slope may change at an integer age.
+
+The adult boundary remains 18: `17.999` receives the neutral result and `18.0`
+uses the adult calculation. Finite ages that cannot be converted safely to an
+integer anchor receive the neutral result. Non-finite age inputs also receive
+the neutral result, with chronological/Fitness Age set to zero, ensuring the
+result is finite and default JSON-encodable. Old JSON integer-age payloads remain
+readable; new payloads can preserve fractional ages. Swift callers reading the
+public age property must now accept `Double`; integer initializer overloads are
+retained for callers that already hold whole-year ages.
+
+The change follows [Algorithm RFC #7](https://github.com/superageapp/ios-core/issues/7).
+Continuous-age fixture expectations were produced independently by compiling
+the app-pinned integer implementation at revision
+`e1fec4603e67e63532c2c880105f68353b8fad84` and blending its outputs. Exact integer
+parity and tests at every birthday from 19 to 90 cover both sex references and
+all mapping modes, including age bands, mapping caps and confidence changes.
+
 The default domain weights are:
 
 | Domain | Default weight |

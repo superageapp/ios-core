@@ -23,7 +23,7 @@ It does not import HealthKit, request permissions, collect health data, store pe
 For released builds, pin an exact version so algorithm updates cannot change results through package resolution alone:
 
 ```swift
-.package(url: "https://github.com/superageapp/ios-core.git", exact: "0.4.0")
+.package(url: "https://github.com/superageapp/ios-core.git", exact: "0.5.0")
 ```
 
 Use `main` only for unreleased development and preview integration:
@@ -43,7 +43,7 @@ import SuperAgeCore
 
 let input = FitnessAgeInput(
     profile: FitnessAgeProfile(
-        chronologicalAge: 42,
+        chronologicalAge: 42.5,
         biologicalSex: .male
     ),
     metrics: FitnessAgeMetrics(
@@ -68,6 +68,14 @@ let domainScores = result.domainScores
 ```
 
 `result.fitnessAge` is intended for informational fitness and wellness experiences. It is not a diagnosis or clinical risk estimate.
+
+`chronologicalAge` accepts fractional years without rounding. Supply completed
+years plus the civil-day fraction since the last birthday. The calculator blends
+adjacent integer-age results, preserving existing integer outputs while making
+adult birthdays and reference-band transitions continuous. It does not calculate
+date-of-birth ages or consult a clock. `result.difference` subtracts the precise
+chronological age, and older integer-age JSON profiles/results remain readable.
+See [the continuous-age methodology](Docs/METHODOLOGY.md#continuous-chronological-age).
 
 SuperAgeCore is calibrated for adults: profiles with a chronological age below 18 are invalid for calculation and return a neutral, low-confidence result instead of an estimate extrapolated from adult reference curves.
 

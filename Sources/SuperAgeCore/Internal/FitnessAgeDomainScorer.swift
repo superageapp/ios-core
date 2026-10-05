@@ -13,9 +13,9 @@ struct FitnessAgeDomainScorer {
 
     func domainScores(
         metrics: FitnessAgeMetrics,
-        profile: FitnessAgeProfile
+        profile: FitnessAgeProfile,
+        age: Int
     ) -> [FitnessAgeDomain: FitnessAgeDomainScore] {
-        let age = profile.chronologicalAge
         let sex = FitnessAgeScoring.referenceSex(from: profile.biologicalSex)
         var scores: [FitnessAgeDomain: FitnessAgeDomainScore] = [:]
 
